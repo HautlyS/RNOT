@@ -1,0 +1,16 @@
+/target
+Cargo.lock
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.iml
+.token
+.key
+config.toml
+snapshots/
+history/
+telemetry-id
+
