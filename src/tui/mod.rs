@@ -26,7 +26,6 @@ pub struct App {
     pub input: String,
     pub status_message: String,
     pub has_token: bool,
-    pub has_chat_id: bool,
     pub pending_url: Option<String>,
 }
 
@@ -41,7 +40,7 @@ pub enum InputMode {
 }
 
 impl App {
-    pub fn new(sites: Vec<WatchedSite>, has_token: bool, has_chat_id: bool) -> Self {
+    pub fn new(sites: Vec<WatchedSite>, has_token: bool, _has_chat_id: bool) -> Self {
         Self {
             sites,
             list_state: ListState::default(),
@@ -51,7 +50,6 @@ impl App {
             input: String::new(),
             status_message: String::new(),
             has_token,
-            has_chat_id,
             pending_url: None,
         }
     }
@@ -265,7 +263,7 @@ fn run_app(
                         KeyCode::Enter => {
                             let url = app.pending_url.take().unwrap_or_default();
                             let name = app.input.clone();
-                            
+
                             let selector = if app.input.is_empty() || app.input == name {
                                 None
                             } else {

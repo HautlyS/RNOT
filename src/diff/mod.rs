@@ -2,11 +2,6 @@ use anyhow::Result;
 use regex::Regex;
 use scraper::{Html, Selector};
 
-pub struct ContentDiff {
-    pub added: Vec<String>,
-    pub removed: Vec<String>,
-}
-
 pub fn extract_content(html: &str, css_selector: Option<&str>) -> Result<String> {
     let document = Html::parse_document(html);
 

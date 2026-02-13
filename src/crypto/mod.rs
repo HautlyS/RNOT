@@ -28,7 +28,8 @@ impl TokenEncryption {
         rand::thread_rng().fill_bytes(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
 
-        let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes())
+        let ciphertext = cipher
+            .encrypt(nonce, plaintext.as_bytes())
             .map_err(|e| anyhow::anyhow!("Encryption failed: {:?}", e))?;
 
         let mut result = nonce_bytes.to_vec();
@@ -50,7 +51,8 @@ impl TokenEncryption {
         let (nonce_bytes, ciphertext) = decoded.split_at(NONCE_SIZE);
         let nonce = Nonce::from_slice(nonce_bytes);
 
-        let plaintext = cipher.decrypt(nonce, ciphertext)
+        let plaintext = cipher
+            .decrypt(nonce, ciphertext)
             .map_err(|e| anyhow::anyhow!("Decryption failed: {:?}", e))?;
 
         Ok(String::from_utf8(plaintext)?)
@@ -79,33 +81,5 @@ impl TokenEncryption {
         }
 
         Ok(key)
-    }
-
-    pub fn has_key(&self) -> bool {
-        self.key_file.exists()
-    }
-}
-
-pub fn store_token_secure(service: &str, token: &str) -> Result<()> {
-    let entry = keyring::Entry::new(service, "rnot_token")?;
-    entry.set_password(token)?;
-    Ok(())
-}
-
-pub fn get_token_secure(service: &str) -> Result<Option<String>> {
-    let entry = keyring::Entry::new(service, "rnot_token")?;
-    match entry.get_password() {
-        Ok(token) => Ok(Some(token)),
-        Err(keyring::Error::NoEntry) => Ok(None),
-        Err(e) => Err(anyhow::anyhow!("Keyring error: {}", e)),
-    }
-}
-
-pub fn delete_token_secure(service: &str) -> Result<()> {
-    let entry = keyring::Entry::new(service, "rnot_token")?;
-    match entry.delete_credential() {
-        Ok(_) => Ok(()),
-        Err(keyring::Error::NoEntry) => Ok(()),
-        Err(e) => Err(anyhow::anyhow!("Keyring error: {}", e)),
     }
 }

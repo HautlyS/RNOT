@@ -1,6 +1,5 @@
 use crate::config::{AppConfig, WatchedSite};
 use anyhow::Result;
-use chrono::{DateTime, Utc};
 use std::path::PathBuf;
 
 pub struct Storage {
@@ -64,29 +63,6 @@ impl Storage {
 
         let updated = toml::to_string_pretty(&config)?;
         std::fs::write(&config_file, updated)?;
-
-        Ok(())
-    }
-
-    pub fn save_change_record(
-        &self,
-        site_id: &str,
-        diff: &str,
-        timestamp: DateTime<Utc>,
-    ) -> Result<()> {
-        let history_dir = self.data_dir.join("history");
-        std::fs::create_dir_all(&history_dir)?;
-
-        let filename = format!("{}_{}.json", site_id, timestamp.format("%Y%m%d_%H%M%S"));
-        let history_file = history_dir.join(filename);
-
-        let record = serde_json::json!({
-            "site_id": site_id,
-            "timestamp": timestamp.to_rfc3339(),
-            "diff": diff,
-        });
-
-        std::fs::write(&history_file, serde_json::to_string_pretty(&record)?)?;
 
         Ok(())
     }

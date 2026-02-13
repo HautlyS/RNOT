@@ -17,15 +17,6 @@ pub struct WatchedSite {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SiteChange {
-    pub site_id: String,
-    pub url: String,
-    pub timestamp: DateTime<Utc>,
-    pub diff: String,
-    pub summary: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub telegram_chat_id: Option<String>,
     pub check_interval_secs: u64,

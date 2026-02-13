@@ -35,7 +35,6 @@ url = "2"
 aes-gcm = "0.10"
 base64 = "0.22"
 rand = "0.8"
-keyring = "3"
 
 [profile.release]
 opt-level = 3
