@@ -1,24 +1,31 @@
-# RNOT - Website Change Monitor
+# RNOT
 
-A fast, cross-platform website monitoring tool with Telegram notifications. Track changes on any website and get instant alerts when content updates.
+Website change monitoring with Telegram notifications.
+
+```
+ ____  _   _  ___ _____ 
+|  _ \| \ | |/ _ \_   _|
+| |_) |  \| | | | || |  
+|  _ <| |\  | |_| || |  
+|_| \_\_| \_|\___/ |_|  
+                        
+Website Monitor
+```
 
 ## Features
 
-- 🔍 **Smart Change Detection** - Filters out ads, timestamps, and noise
-- 🔐 **Encrypted Token Storage** - Secure AES-256-GCM encryption
-- 🖥️ **TUI Dashboard** - Beautiful terminal interface
-- ⚡ **Fast & Lightweight** - Written in Rust
-- 🌐 **Cross-Platform** - Linux, macOS, Windows
-- 🤖 **Telegram Notifications** - Real-time alerts
-- 🎯 **CSS Selectors** - Monitor specific page sections
-- 🔄 **Auto-Refresh** - Configurable check intervals (default: 3 minutes)
-- 📦 **Systemd Service** - Run as background daemon
+- Smart change detection with noise filtering
+- AES-256-GCM encrypted token storage
+- Terminal UI dashboard
+- CSS selector support for targeted monitoring
+- Configurable check intervals (default: 180s)
+- Cross-platform: Linux, macOS, Windows
+- Background daemon mode
+- System service integration
 
 ## Installation
 
 ### Pre-built Binaries
-
-Download the latest release for your platform:
 
 ```bash
 # Linux x86_64
@@ -53,48 +60,34 @@ sudo cp target/release/rnot /usr/local/bin/
 
 ### 1. Setup Telegram Bot
 
-1. Create a bot via [@BotFather](https://t.me/botfather) on Telegram
-2. Copy the bot token
-3. Set the token (encrypted storage):
+Create a bot via @BotFather on Telegram, then:
 
 ```bash
 rnot set-token YOUR_BOT_TOKEN
-```
-
-4. Send a message to your bot, then run:
-
-```bash
 rnot telegram-setup
 ```
 
-### 2. Add Websites to Monitor
+Send a message to your bot when prompted.
+
+### 2. Add Websites
 
 ```bash
-# Add a website
+# Basic monitoring
 rnot add https://example.com --name "Example Site"
 
-# Add with CSS selector (monitor specific content)
+# Monitor specific content with CSS selector
 rnot add https://news.ycombinator.com --name "HN" --selector ".storylink"
 
-# List all monitored sites
+# List monitored sites
 rnot list
 ```
 
-### 3. Run the Monitor
+### 3. Run Monitor
 
-**Option A: TUI Dashboard**
 ```bash
-rnot tui
-```
-
-**Option B: Daemon Mode**
-```bash
-rnot daemon
-```
-
-**Option C: One-time Check**
-```bash
-rnot check
+rnot tui      # Interactive dashboard
+rnot daemon   # Background service
+rnot check    # One-time check
 ```
 
 ## CLI Commands
@@ -123,53 +116,63 @@ rnot status                 # Show configuration
 - `?` - Show help
 - `q` - Quit
 
-## Systemd Service (Linux)
+## Auto-Start Service (All Platforms)
 
-Run RNOT as a system service that starts on boot:
+RNOT can automatically start on system boot or user login:
 
 ```bash
-# Create service file
-sudo tee /etc/systemd/system/rnot.service > /dev/null <<EOF
-[Unit]
-Description=Website Monitor Service
-After=network.target
+# Interactive installation (recommended)
+rnot install-service
 
-[Service]
-Type=simple
-User=$USER
-WorkingDirectory=$HOME
-ExecStart=/usr/local/bin/rnot daemon
-Restart=always
-RestartSec=10
-Environment=RUST_LOG=info
+# You'll be prompted to choose when to start:
+#   1) System boot - Starts when computer boots (requires sudo on Linux)
+#   2) User login - Starts when you log in (recommended, no sudo needed)
 
-[Install]
-WantedBy=multi-user.target
-EOF
+# Skip prompts (defaults to boot)
+rnot install-service --yes
 
-# Enable and start
-sudo systemctl daemon-reload
-sudo systemctl enable rnot
-sudo systemctl start rnot
+# Check service status
+rnot service-status
 
-# Check status
-sudo systemctl status rnot
-
-# View logs
-journalctl -u rnot -f
+# Uninstall service
+rnot uninstall-service
 ```
+
+### Platform-Specific Details
+
+Linux (systemd)
+- Boot: Creates system service in /etc/systemd/system/ (requires sudo)
+- Login: Creates user service in ~/.config/systemd/user/ (no sudo)
+- Commands:
+  systemctl --user status rnot      # User service status
+  sudo systemctl status rnot        # System service status
+  journalctl --user -u rnot -f      # View user service logs
+  sudo journalctl -u rnot -f        # View system service logs
+
+macOS (LaunchAgent)
+- Creates plist in ~/Library/LaunchAgents/
+- Commands:
+  launchctl list | grep rnot
+  tail -f ~/Library/Logs/rnot.log
+
+Windows (Task Scheduler)
+- Creates scheduled task (requires Administrator)
+- Commands:
+  schtasks /Query /TN RNOT-Monitor
+  schtasks /Run /TN RNOT-Monitor
+  schtasks /End /TN RNOT-Monitor
 
 ## Configuration
 
 Configuration is stored in:
-- **Linux**: `~/.config/rnot/`
-- **macOS**: `~/Library/Application Support/rnot/`
-- **Windows**: `%APPDATA%\rnot\`
+- Linux: ~/.config/rnot/
+- macOS: ~/Library/Application Support/rnot/
+- Windows: %APPDATA%\rnot\
 
 Files:
-- `config.toml` - Sites and settings
-- `.token` - Encrypted Telegram token
-- `.key` - Encryption key (auto-generated)
+- config.toml - Sites and settings
+- .token - Encrypted Telegram token
+- .key - Encryption key (auto-generated)
 
 ### config.toml Example
 
@@ -220,13 +223,13 @@ check_interval_secs = 300  # 5 minutes
 
 ## Troubleshooting
 
-**No notifications received:**
+No notifications received:
 ```bash
 rnot status  # Check token and chat ID
 rnot telegram-setup  # Reconfigure
 ```
 
-**Build errors:**
+Build errors:
 ```bash
 # Update Rust
 rustup update stable
@@ -236,7 +239,7 @@ cargo clean
 cargo build --release
 ```
 
-**Permission denied (Linux service):**
+Permission denied (Linux service):
 ```bash
 sudo chown $USER:$USER /usr/local/bin/rnot
 chmod +x /usr/local/bin/rnot
@@ -258,6 +261,27 @@ cargo fmt
 cargo clippy
 ```
 
+## Release Process
+
+For maintainers:
+
+```bash
+# Run release script
+./scripts/release.sh 0.2.0
+
+# Push to GitHub
+git push origin main --tags
+```
+
+The CI pipeline will:
+1. Run pre-flight checks (fmt, clippy, tests)
+2. Build binaries for all platforms
+3. Run cross-platform tests
+4. Create GitHub release with binaries and checksums
+5. Generate release notes with ASCII art
+
+All builds must pass 100% before release is published.
+
 ## Contributing
 
 1. Fork the repository
@@ -278,7 +302,3 @@ Built with:
 - [Reqwest](https://github.com/seanmonstar/reqwest) - HTTP client
 - [Scraper](https://github.com/causal-agent/scraper) - HTML parsing
 - [AES-GCM](https://github.com/RustCrypto/AEADs) - Encryption
-
----
-
-**Made with ❤️ by the RNOT Team**

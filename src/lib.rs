@@ -3,6 +3,7 @@ pub mod config;
 pub mod crypto;
 pub mod diff;
 pub mod monitor;
+pub mod service;
 pub mod storage;
 pub mod telegram;
 pub mod tui;

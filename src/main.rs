@@ -3,6 +3,7 @@ mod config;
 mod crypto;
 mod diff;
 mod monitor;
+mod service;
 mod storage;
 mod telegram;
 mod tui;

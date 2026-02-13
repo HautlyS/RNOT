@@ -1,5 +1,6 @@
 use crate::config::Config;
 use crate::monitor::Monitor;
+use crate::service::ServiceManager;
 use crate::storage::Storage;
 use crate::telegram::TelegramClient;
 use crate::tui::run_tui;
@@ -59,6 +60,18 @@ enum Commands {
 
     #[command(about = "Show current configuration status")]
     Status,
+
+    #[command(about = "Install system service (run on boot)")]
+    InstallService {
+        #[arg(long, help = "Skip confirmation prompts")]
+        yes: bool,
+    },
+
+    #[command(about = "Uninstall system service")]
+    UninstallService,
+
+    #[command(about = "Check service status")]
+    ServiceStatus,
 }
 
 pub async fn run(mut config: Config) -> Result<()> {
@@ -241,6 +254,15 @@ pub async fn run(mut config: Config) -> Result<()> {
             println!("Watched Sites: {}", config.app_config.sites.len());
             println!("Config Dir: {}", config.config_dir.display());
             println!("Data Dir: {}", config.data_dir.display());
+        }
+        Commands::InstallService { yes } => {
+            ServiceManager::install(yes)?;
+        }
+        Commands::UninstallService => {
+            ServiceManager::uninstall()?;
+        }
+        Commands::ServiceStatus => {
+            ServiceManager::status()?;
         }
     }
 

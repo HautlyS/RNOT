@@ -10,11 +10,27 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  check:
+    name: Pre-flight Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Run clippy
+        run: cargo clippy --all-features -- -D warnings
+      - name: Run tests
+        run: cargo test --all-features
+
   build:
     name: Build ${{ matrix.target }}
+    needs: check
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - os: ubuntu-latest
@@ -87,9 +103,10 @@ jobs:
 
   test:
     name: Test ${{ matrix.os }}
+    needs: check
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
@@ -102,9 +119,6 @@ jobs:
       - name: Run tests
         run: cargo test --all-features
 
-      - name: Run clippy
-        run: cargo clippy -- -D warnings
-
   release:
     name: Create Release
     needs: [build, test]
@@ -113,27 +127,100 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Create checksums
+      - name: Prepare release assets
         run: |
+          mkdir -p release
           cd artifacts
           for dir in */; do
-            cd "$dir"
-            sha256sum * > checksums.txt
-            cd ..
+            name="${dir%/}"
+            if [ -f "$dir/rnot" ]; then
+              cp "$dir/rnot" "../release/$name"
+              chmod +x "../release/$name"
+            elif [ -f "$dir/rnot.exe" ]; then
+              cp "$dir/rnot.exe" "../release/$name"
+            fi
           done
+          cd ../release
+          sha256sum * > SHA256SUMS
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          cat > release_notes.md << 'EOF'
+          ```
+           ____  _   _  ___ _____ 
+          |  _ \| \ | |/ _ \_   _|
+          | |_) |  \| | | | || |  
+          |  _ <| |\  | |_| || |  
+          |_| \_\_| \_|\___/ |_|  
+          
+          RNOT $VERSION
+          ```
+          
+          ## Installation
+          
+          Download the binary for your platform:
+          
+          ### Linux
+          ```bash
+          curl -L https://github.com/HautlyS/RNOT/releases/download/$VERSION/rnot-linux-x86_64 -o rnot
+          chmod +x rnot
+          sudo mv rnot /usr/local/bin/
+          ```
+          
+          ### macOS
+          ```bash
+          # Intel
+          curl -L https://github.com/HautlyS/RNOT/releases/download/$VERSION/rnot-macos-x86_64 -o rnot
+          
+          # Apple Silicon (M1/M2)
+          curl -L https://github.com/HautlyS/RNOT/releases/download/$VERSION/rnot-macos-aarch64 -o rnot
+          
+          chmod +x rnot
+          sudo mv rnot /usr/local/bin/
+          ```
+          
+          ### Windows
+          ```powershell
+          Invoke-WebRequest -Uri "https://github.com/HautlyS/RNOT/releases/download/$VERSION/rnot-windows-x86_64.exe" -OutFile "rnot.exe"
+          ```
+          
+          ## Verify Download
+          ```bash
+          sha256sum -c SHA256SUMS
+          ```
+          
+          ## What's Changed
+          
+          EOF
+          
+          # Get commits since last tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            git log $PREV_TAG..HEAD --pretty=format:"- %s" >> release_notes.md
+          else
+            echo "Initial release" >> release_notes.md
+          fi
+          
+          cat release_notes.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/**/*
+          files: release/*
+          body_path: release_notes.md
           draft: false
           prerelease: false
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
