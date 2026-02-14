@@ -344,7 +344,7 @@ WantedBy=multi-user.target
         println!("Installing LaunchAgent...");
 
         Command::new("launchctl")
-            .args(["load", plist_file.to_str().unwrap()])
+            .args(["load", &plist_file.to_string_lossy()])
             .status()?;
 
         println!("✓ Service installed and started successfully!");
@@ -373,7 +373,7 @@ WantedBy=multi-user.target
 
         if plist_file.exists() {
             let _ = Command::new("launchctl")
-                .args(["unload", plist_file.to_str().unwrap()])
+                .args(["unload", &plist_file.to_string_lossy()])
                 .status();
 
             fs::remove_file(&plist_file)?;
@@ -479,7 +479,7 @@ WantedBy=multi-user.target
                 "/TN",
                 task_name,
                 "/XML",
-                task_file.to_str().unwrap(),
+                &task_file.to_string_lossy(),
                 "/F",
             ])
             .status()?;

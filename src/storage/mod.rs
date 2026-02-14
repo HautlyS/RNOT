@@ -16,6 +16,8 @@ impl Storage {
     }
 
     pub fn save_snapshot(&self, site_id: &str, content: &str) -> Result<()> {
+        Self::validate_site_id(site_id)?;
+
         let snapshot_dir = self.data_dir.join("snapshots");
         std::fs::create_dir_all(&snapshot_dir)?;
 
@@ -26,6 +28,8 @@ impl Storage {
     }
 
     pub fn get_snapshot(&self, site_id: &str) -> Result<String> {
+        Self::validate_site_id(site_id)?;
+
         let snapshot_file = self
             .data_dir
             .join("snapshots")
@@ -36,6 +40,16 @@ impl Storage {
         } else {
             Ok(String::new())
         }
+    }
+
+    fn validate_site_id(site_id: &str) -> Result<()> {
+        if site_id.is_empty() || site_id.len() > 64 {
+            anyhow::bail!("Invalid site ID length");
+        }
+        if !site_id.chars().all(|c| c.is_ascii_alphanumeric()) {
+            anyhow::bail!("Site ID contains invalid characters");
+        }
+        Ok(())
     }
 
     pub fn load_sites(&self) -> Vec<WatchedSite> {

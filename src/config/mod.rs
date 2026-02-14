@@ -77,7 +77,7 @@ impl Config {
         })
     }
 
-    pub fn get_telegram_token(&self) -> Option<String> {
+    pub fn get_telegram_token(&mut self) -> Option<String> {
         if let Some(ref token) = self.cached_token {
             return Some(token.clone());
         }
@@ -86,6 +86,7 @@ impl Config {
         if token_file.exists() {
             if let Ok(encrypted) = std::fs::read_to_string(&token_file) {
                 if let Ok(token) = self.encryption.decrypt(&encrypted) {
+                    self.cached_token = Some(token.clone());
                     return Some(token);
                 }
             }
@@ -118,7 +119,7 @@ impl Config {
         Ok(())
     }
 
-    pub fn has_telegram_token(&self) -> bool {
+    pub fn has_telegram_token(&mut self) -> bool {
         self.get_telegram_token().is_some()
     }
 
@@ -135,6 +136,21 @@ impl Config {
         name: String,
         css_selector: Option<String>,
     ) -> Result<String> {
+        // Validate URL
+        url::Url::parse(&url).map_err(|e| anyhow::anyhow!("Invalid URL: {}", e))?;
+
+        // Validate name
+        if name.is_empty() || name.len() > 255 {
+            anyhow::bail!("Site name must be between 1 and 255 characters");
+        }
+
+        // Validate CSS selector if provided
+        if let Some(ref selector) = css_selector {
+            if selector.len() > 1024 {
+                anyhow::bail!("CSS selector too long (max 1024 characters)");
+            }
+        }
+
         let id = self.generate_id(&url);
         let site = WatchedSite {
             id: id.clone(),

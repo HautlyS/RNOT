@@ -28,7 +28,7 @@ impl Monitor {
             .user_agent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36")
             .timeout(Duration::from_secs(30))
             .build()
-            .unwrap();
+            .expect("Failed to build HTTP client");
 
         Self {
             client,
@@ -40,8 +40,31 @@ impl Monitor {
     pub async fn check_site(&self, site: &mut WatchedSite) -> Result<Option<String>> {
         info!("Checking site: {} ({})", site.name, site.url);
 
+        // Validate URL before making request
+        let parsed_url =
+            url::Url::parse(&site.url).map_err(|e| anyhow::anyhow!("Invalid URL: {}", e))?;
+
+        // Only allow HTTP/HTTPS
+        if parsed_url.scheme() != "http" && parsed_url.scheme() != "https" {
+            anyhow::bail!("Only HTTP and HTTPS URLs are supported");
+        }
+
         let response = self.client.get(&site.url).send().await?;
+
+        // Check response size to prevent memory exhaustion
+        if let Some(content_length) = response.content_length() {
+            if content_length > 10_000_000 {
+                // 10MB limit
+                anyhow::bail!("Response too large (>10MB)");
+            }
+        }
+
         let html = response.text().await?;
+
+        // Additional size check after download
+        if html.len() > 10_000_000 {
+            anyhow::bail!("Response too large (>10MB)");
+        }
 
         let content = extract_content(&html, site.css_selector.as_deref())?;
         let filtered = filter_noise(&content);

@@ -61,7 +61,7 @@ pub fn filter_noise(content: &str) -> String {
     ];
 
     let combined_pattern = timestamp_patterns.join("|");
-    let re = Regex::new(&combined_pattern).unwrap();
+    let re = Regex::new(&combined_pattern).expect("Invalid regex pattern - this is a bug");
 
     let ad_patterns = [
         r"advertisement",
@@ -81,7 +81,8 @@ pub fn filter_noise(content: &str) -> String {
     ];
 
     let ad_pattern = ad_patterns.join("|");
-    let ad_re = Regex::new(&format!("(?i){}", ad_pattern)).unwrap();
+    let ad_re =
+        Regex::new(&format!("(?i){}", ad_pattern)).expect("Invalid regex pattern - this is a bug");
 
     let filtered: Vec<String> = lines
         .into_iter()
